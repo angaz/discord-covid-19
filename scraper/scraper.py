@@ -202,7 +202,10 @@ def plot_sa(
             off_len = offset + length
             y_plot = y[offset:off_len]
             plt.plot(
-                range(length), y_plot, marker="o", label=country.country_region,
+                range(length),
+                y_plot,
+                marker="o",
+                label=f"{country.country_region} ({offset} days offset)",
             )
 
         else:
@@ -225,7 +228,7 @@ async def _main():
     async with ClientSession() as session:
         data = await initialize_data(session)
 
-    plot_sa(data, ["South Africa", "Italy", "Korea, South"], 5)
+    plot_sa(data, ["South Africa", "Italy", "Korea, South"], 0)
 
 
 if __name__ == "__main__":
