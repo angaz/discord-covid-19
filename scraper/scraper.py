@@ -8,14 +8,10 @@ import typing
 from datetime import datetime, date, timezone
 from dataclasses import dataclass
 from csv import DictReader
-from pathlib import Path
 from matplotlib import pyplot as plt
-
-import json
-
+import pycountry
+import matplotlib.dates as mdates
 from aiohttp import ClientSession
-
-DATABASE_FILE = Path("database.json").resolve()
 
 
 def parse_last_update(last_update: str) -> datetime:
@@ -25,6 +21,25 @@ def parse_last_update(last_update: str) -> datetime:
         out = datetime.strptime(last_update, "%m/%d/%y")
 
     return out.replace(tzinfo=timezone.utc)
+
+
+def find_country(country_region: str) -> pycountry.ExistingCountries:
+    known = {
+        "Burma": pycountry.countries.get(alpha_2="MM"),
+        "Congo (Brazzaville)": pycountry.countries.get(alpha_2="CG"),
+        "Congo (Kinshasa)": pycountry.countries.get(alpha_2="CG"),
+        "Diamond Princess": None,
+        "Korea, South": pycountry.countries.get(alpha_2="KR"),
+        "Laos": pycountry.countries.get(alpha_2="LA"),
+        "MS Zaandam": None,
+        "Taiwan*": pycountry.countries.get(alpha_2="TW"),
+        "West Bank and Gaza": pycountry.countries.get(alpha_2="PL"),
+    }
+
+    if country_region in known:
+        return known[country_region]
+    else:
+        return pycountry.countries.search_fuzzy(country_region)[0]
 
 
 @dataclass(frozen=True)
@@ -78,8 +93,17 @@ class DayData:
 @dataclass
 class CountryData:
     country_region: str
+    country: pycountry.ExistingCountries
     last_update: datetime
     days: typing.List[DayData]
+
+    def __init__(
+        self, country_region: str, last_update: datetime, days: typing.List[DayData]
+    ):
+        self.country_region = country_region
+        self.country = find_country(country_region)
+        self.last_update = last_update
+        self.days = days
 
     def to_dict(self) -> dict:
         return {
@@ -95,6 +119,15 @@ class CountryData:
             data["last_update"],
             [DayData.from_dict(day) for day in data["days"]],
         )
+
+    def x_axis(self) -> typing.List[str]:
+        return [d.day for d in self.days if d.confirmed > 0]
+
+    def y_axis(self) -> typing.List[int]:
+        return [d.confirmed for d in self.days if d.confirmed > 0]
+
+    def axes_confirmed(self) -> typing.Tuple[typing.List[str], typing.List[int]]:
+        return self.x_axis(), self.y_axis()
 
 
 CountryDayDataList = typing.List[CountryDayData]
@@ -159,65 +192,84 @@ async def initialize_data(session: ClientSession) -> CountryDataList:
         for row in day
     ]
 
-    out = group_country_region(data)
-    with DATABASE_FILE.open("w") as f:
-        json.dump([o.to_dict() for o in out], f)
-
-    return out
+    return group_country_region(data)
 
 
-def get_axes_confirmed(
-    country: CountryData, since_nth_case: typing.Optional[int] = None
-) -> typing.Tuple[CountryData, int, typing.List[int], typing.List[date]]:
-    x = [d.day for d in country.days if d.confirmed > 0]
-    y = [d.confirmed for d in country.days if d.confirmed > 0]
-
-    if since_nth_case:
-        offset = [i >= since_nth_case for i in y].index(True)
-        return country, offset, x, y
-    else:
-        return country, 0, x, y
+def axes_confirmed_since_nth_case(country: CountryData, since_nth_case: int):
+    x, y = country.axes_confirmed()
+    offset = [i >= since_nth_case for i in y].index(True)
+    return offset, x, y
 
 
-def plot_sa(
-    data: CountryDataList,
-    country_names: typing.Sequence[str],
-    since_nth_case: typing.Optional[int] = None,
+def graph_since_nth_case(
+    data: CountryDataList, country_names: typing.Sequence[str], since_nth_case: int,
 ):
-    countries = [
-        get_axes_confirmed(c, since_nth_case)
-        for c in data
-        if c.country_region in country_names
+    country_codes = [
+        pycountry.countries.search_fuzzy(cn)[0].alpha_2 for cn in country_names
     ]
-    shortest_country = min(*[c for c in countries], key=lambda c: len(c[3]) - c[1])
-    length = len(shortest_country[3]) - shortest_country[1]
+    countries = [
+        (c, *axes_confirmed_since_nth_case(c, since_nth_case))
+        for c in data
+        if (c.country and c.country.alpha_2 in country_codes)
+        or c.country_region in country_names
+    ]
+    first_country = [
+        c
+        for c in countries
+        if (c[0].country and c[0].country.alpha_2 == country_codes[0])
+        or c[0].country_region == country_codes[0]
+    ][0]
+    length = len(first_country[3]) - first_country[1]
 
+    plt.figure()
     plt.style.use("discord.mplstyle")
 
     for country, offset, x, y in countries:
-        if since_nth_case is not None:
-            if offset == -1:
-                continue
+        if offset == -1:
+            continue
 
-            off_len = offset + length
-            y_plot = y[offset:off_len]
-            plt.plot(
-                range(length),
-                y_plot,
-                marker="o",
-                label=f"{country.country_region} ({offset} days offset)",
-            )
-
-        else:
-            plt.plot(x, y, marker="o", label=country.country_region)
-
-    if since_nth_case is not None:
-        plt.xlabel(
-            f"Days since {since_nth_case}th case ({length} days for {shortest_country[0].country_region})"
+        off_len = offset + length
+        y_plot = y[offset:off_len]
+        plt.plot(
+            range(len(y_plot)),
+            y_plot,
+            marker="o",
+            label=(
+                f"{country.country.name} ({offset} days offset)"
+                if since_nth_case
+                else country.country.name
+            ),
         )
-    else:
-        plt.xlabel("Date")
 
+    plt.xlabel(
+        f"Days since {since_nth_case}th case ({length} days for {first_country[0].country.name})"
+    )
+    plt.ylabel("Number of cases")
+    plt.tight_layout()
+    plt.legend()
+    plt.savefig("fig_since_nth.png")
+
+
+def graph(
+    data: CountryDataList, country_names: typing.Sequence[str],
+):
+    country_codes = [
+        pycountry.countries.search_fuzzy(cn)[0].alpha_2 for cn in country_names
+    ]
+    countries = [
+        (c, *c.axes_confirmed())
+        for c in data
+        if (c.country and c.country.alpha_2 in country_codes)
+        or c.country_region in country_names
+    ]
+
+    plt.figure()
+    plt.style.use("discord.mplstyle")
+
+    for country, x, y in countries:
+        plt.plot(x, y, marker="o", label=country.country.name)
+
+    plt.xlabel("Date")
     plt.ylabel("Number of cases")
     plt.tight_layout()
     plt.legend()
@@ -228,7 +280,8 @@ async def _main():
     async with ClientSession() as session:
         data = await initialize_data(session)
 
-    plot_sa(data, ["South Africa", "Italy", "Korea, South"], 0)
+    graph(data, ["South Africa"])
+    graph_since_nth_case(data, ["South Africa", "Italy", "KR", "Czech Republic"], 0)
 
 
 if __name__ == "__main__":
