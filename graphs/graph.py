@@ -8,7 +8,7 @@ from country_day_data import CountryDataList
 
 
 def graph(
-    data: CountryDataList, outdir: Path, country_names: typing.Sequence[str],
+    data: CountryDataList, outfile: Path, country_names: typing.Sequence[str],
 ):
     country_codes = [
         pycountry.countries.search_fuzzy(cn)[0].alpha_2 for cn in country_names
@@ -34,4 +34,4 @@ def graph(
     ax.set_ylabel("Number of cases")
     ax.legend()
     fig.tight_layout()
-    fig.savefig(outdir / "graph.png")
+    fig.savefig(outfile)

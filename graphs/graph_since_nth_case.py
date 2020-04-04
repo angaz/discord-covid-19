@@ -15,7 +15,7 @@ def axes_confirmed_since_nth_case(country: CountryData, since_nth_case: int):
 
 def graph_since_nth_case(
     data: CountryDataList,
-    outdir: Path,
+    outfile: Path,
     country_names: typing.Sequence[str],
     since_nth_case: int,
 ):
@@ -61,4 +61,4 @@ def graph_since_nth_case(
     ax.set_ylabel("Number of cases")
     ax.legend()
     fig.tight_layout()
-    fig.savefig(outdir / "graph_since_nth.png")
+    fig.savefig(outfile)

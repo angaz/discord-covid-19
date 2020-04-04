@@ -16,9 +16,13 @@ async def _main():
 
     plt.style.use("discord.mplstyle")
 
-    graph(data, outdir, ["Czech Republic", "South Africa"])
+    graph(data, outdir / "cz_za.png", ["Czech Republic", "South Africa"])
+    graph(data, outdir / "us_za.png", ["USA", "ZAR"])
     graph_since_nth_case(
-        data, outdir, ["South Africa", "Italy", "KR", "Czech Republic"], 0
+        data,
+        outdir / "0_day.png",
+        ["South Africa", "Italy", "KR", "Czech Republic", "USA"],
+        0,
     )
 
 
