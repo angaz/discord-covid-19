@@ -2,12 +2,13 @@ import typing
 import pycountry
 import matplotlib.dates as mdates
 from matplotlib import pyplot as plt
+from pathlib import Path
 
 from country_day_data import CountryDataList
 
 
 def graph(
-    data: CountryDataList, country_names: typing.Sequence[str],
+    data: CountryDataList, outdir: Path, country_names: typing.Sequence[str],
 ):
     country_codes = [
         pycountry.countries.search_fuzzy(cn)[0].alpha_2 for cn in country_names
@@ -33,4 +34,4 @@ def graph(
     ax.set_ylabel("Number of cases")
     ax.legend()
     fig.tight_layout()
-    fig.savefig("fig.png")
+    fig.savefig(outdir / "graph.png")

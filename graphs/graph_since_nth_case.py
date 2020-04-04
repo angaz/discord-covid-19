@@ -1,6 +1,7 @@
 import typing
 import pycountry
 from matplotlib import pyplot as plt
+from pathlib import Path
 
 
 from country_day_data import CountryDataList, CountryData
@@ -13,7 +14,10 @@ def axes_confirmed_since_nth_case(country: CountryData, since_nth_case: int):
 
 
 def graph_since_nth_case(
-    data: CountryDataList, country_names: typing.Sequence[str], since_nth_case: int,
+    data: CountryDataList,
+    outdir: Path,
+    country_names: typing.Sequence[str],
+    since_nth_case: int,
 ):
     country_codes = [
         pycountry.countries.search_fuzzy(cn)[0].alpha_2 for cn in country_names
@@ -57,4 +61,4 @@ def graph_since_nth_case(
     ax.set_ylabel("Number of cases")
     ax.legend()
     fig.tight_layout()
-    fig.savefig("fig_since_nth.png")
+    fig.savefig(outdir / "graph_since_nth.png")

@@ -2,3 +2,4 @@
 .vscode
 *.png
 database.json
+__pycache__

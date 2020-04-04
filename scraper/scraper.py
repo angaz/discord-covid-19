@@ -3,12 +3,11 @@
 # Historical Data
 # https://raw.githubusercontent.com/CSSEGISandData/COVID-19/web-data/data/cases_time.csv
 
-import asyncio
 import typing
 from datetime import datetime, date
 from csv import DictReader
-from matplotlib import pyplot as plt
 from aiohttp import ClientSession
+from itertools import groupby
 
 from country_day_data import (
     CountryDataList,
@@ -17,7 +16,6 @@ from country_day_data import (
     CountryData,
     DayData,
 )
-from graphs import graph, graph_since_nth_case
 
 
 async def download_csv_file(
@@ -45,51 +43,56 @@ async def download_historical_data(session: ClientSession) -> CountryDayDataList
 
 def group_country_region(data: CountryDayDataList) -> CountryDataList:
     data.sort(key=lambda d: d.day)
-    data.sort(key=lambda d: d.country_region)
+    data.sort(key=lambda d: d.identifier)
 
-    output_list = []
-    current_list = [data[0]]
-    for current in data[1:]:
-        if current.country_region == current_list[0].country_region:
-            current_list.append(current)
-        else:
-            output_list.append(
-                CountryData(
-                    current_list[0].country_region,
-                    max(current_list, key=lambda a: a.last_update).last_update,
-                    [
-                        DayData(day.day, day.confirmed, day.deaths, day.recovered)
-                        for day in current_list
-                    ],
+    return [
+        CountryData(
+            c[0].country_region,
+            max(c, key=lambda d: d.last_update).last_update,
+            [
+                DayData(
+                    days[0].day,
+                    sum(d.confirmed for d in days),
+                    sum(d.deaths for d in days),
+                    sum(d.recovered for d in days),
                 )
-            )
-            current_list = [current]
+                for days in (list(d) for _, d in groupby(c, key=lambda d: d.day))
+            ],
+        )
+        for c in (list(c) for _, c in groupby(data, key=lambda c: c.identifier))
+    ]
 
-    return output_list
+    # output_list = []
+    # current_list = [data[0]]
+    # for current in data[1:]:
+    #     if current.identifier == current_list[0].identifier:
+    #         current_list.append(current)
+    #     else:
+    #         days = [
+    #             DayData(day.day, day.confirmed, day.deaths, day.recovered)
+    #             for day in current_list
+    #         ]
+
+    #         output_list.append(
+    #             CountryData(
+    #                 current_list[0].country_region,
+    #                 max(current_list, key=lambda a: a.last_update).last_update,
+    #                 days,
+    #             )
+    #         )
+    #         current_list = [current]
+
+    # return output_list
 
 
 async def initialize_data(session: ClientSession) -> CountryDataList:
     data = [
         row
-        for day in [
+        for csv_file in [
             await download_historical_data(session),
             await download_current_data(session),
         ]
-        for row in day
+        for row in csv_file
     ]
 
     return group_country_region(data)
-
-
-async def _main():
-    async with ClientSession() as session:
-        data = await initialize_data(session)
-
-    plt.style.use("discord.mplstyle")
-
-    graph(data, ["Czech Republic", "South Africa"])
-    graph_since_nth_case(data, ["South Africa", "Italy", "KR", "Czech Republic"], 0)
-
-
-if __name__ == "__main__":
-    asyncio.get_event_loop().run_until_complete(_main())

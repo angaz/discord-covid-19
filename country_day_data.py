@@ -3,6 +3,8 @@ import typing
 from datetime import datetime, date, timezone
 import pycountry
 
+FOUND_COUNTRIES = {}
+
 
 def parse_last_update(last_update: str) -> datetime:
     try:
@@ -14,6 +16,9 @@ def parse_last_update(last_update: str) -> datetime:
 
 
 def find_country(country_region: str) -> pycountry.ExistingCountries:
+    if country_region in FOUND_COUNTRIES:
+        return FOUND_COUNTRIES[country_region]
+
     known = {
         "Burma": pycountry.countries.get(alpha_2="MM"),
         "Congo (Brazzaville)": pycountry.countries.get(alpha_2="CG"),
@@ -26,10 +31,14 @@ def find_country(country_region: str) -> pycountry.ExistingCountries:
         "West Bank and Gaza": pycountry.countries.get(alpha_2="PL"),
     }
 
-    if country_region in known:
-        return known[country_region]
-    else:
-        return pycountry.countries.search_fuzzy(country_region)[0]
+    out = (
+        known[country_region]
+        if country_region in known
+        else pycountry.countries.search_fuzzy(country_region)[0]
+    )
+
+    FOUND_COUNTRIES[country_region] = out
+    return out
 
 
 @dataclass(frozen=True)
@@ -40,6 +49,11 @@ class CountryDayData:
     confirmed: int
     deaths: int
     recovered: int
+
+    @property
+    def identifier(self):
+        country = find_country(self.country_region)
+        return country.alpha_2.upper() if country else self.country_region.upper()
 
     @classmethod
     def init_csv_row(cls, data: dict, day: typing.Optional[date] = None):
@@ -84,6 +98,7 @@ class DayData:
 class CountryData:
     country_region: str
     country: pycountry.ExistingCountries
+    identifier: str
     last_update: datetime
     days: typing.List[DayData]
 
@@ -94,10 +109,16 @@ class CountryData:
         self.country = find_country(country_region)
         self.last_update = last_update
         self.days = days
+        self.identifier = (
+            self.country.alpha_2.upper()
+            if self.country
+            else self.country_region.replace(" ", "_").upper()
+        )
 
     def to_dict(self) -> dict:
         return {
             "country_region": self.country_region,
+            "identifier": self.identifier,
             "last_update": self.last_update.isoformat(),
             "days": [day.to_dict() for day in self.days],
         }
