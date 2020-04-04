@@ -39,6 +39,7 @@ def graph_since_nth_case(
             ),
         )
 
+    ax.set_title(f"Confirmed Cases vs Time since {since_nth_case}th case")
     ax.set_xlabel(
         f"Days since {since_nth_case}th case ({length} days for {first_country[0].country.name})"
     )

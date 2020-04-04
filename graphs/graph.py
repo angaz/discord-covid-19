@@ -19,8 +19,9 @@ def graph(countries: CountryDataList) -> Image:
     ax.xaxis.set_major_locator(locator)
     ax.xaxis.set_major_formatter(formatter)
 
+    ax.set_title("Confirmed Cases vs Time")
     ax.set_xlabel("Date")
-    ax.set_ylabel("Number of cases")
+    ax.set_ylabel("Number of Confirmed Cases")
     ax.legend()
     fig.tight_layout()
 
