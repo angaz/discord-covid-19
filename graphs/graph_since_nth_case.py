@@ -1,8 +1,6 @@
-import typing
-import pycountry
 from matplotlib import pyplot as plt
-from pathlib import Path
-
+from PIL import Image
+from io import BytesIO
 
 from country_day_data import CountryDataList, CountryData
 
@@ -14,26 +12,12 @@ def axes_confirmed_since_nth_case(country: CountryData, since_nth_case: int):
 
 
 def graph_since_nth_case(
-    data: CountryDataList,
-    outfile: Path,
-    country_names: typing.Sequence[str],
-    since_nth_case: int,
+    countries: CountryDataList, since_nth_case: int,
 ):
-    country_codes = [
-        pycountry.countries.search_fuzzy(cn)[0].alpha_2 for cn in country_names
-    ]
     countries = [
-        (c, *axes_confirmed_since_nth_case(c, since_nth_case))
-        for c in data
-        if (c.country and c.country.alpha_2 in country_codes)
-        or c.country_region in country_names
+        (c, *axes_confirmed_since_nth_case(c, since_nth_case)) for c in countries
     ]
-    first_country = [
-        c
-        for c in countries
-        if (c[0].country and c[0].country.alpha_2 == country_codes[0])
-        or c[0].country_region == country_codes[0]
-    ][0]
+    first_country = countries[0]
     length = len(first_country[3]) - first_country[1]
 
     fig, ax = plt.subplots()
@@ -61,4 +45,10 @@ def graph_since_nth_case(
     ax.set_ylabel("Number of cases")
     ax.legend()
     fig.tight_layout()
-    fig.savefig(outfile)
+
+    buf = BytesIO()
+    fig.savefig(buf, format="png")
+    buf.seek(0)
+    img = Image.open(buf)
+    # buf.close()
+    return img

@@ -45,8 +45,8 @@ def group_country_region(data: CountryDayDataList) -> CountryDataList:
     data.sort(key=lambda d: d.day)
     data.sort(key=lambda d: d.identifier)
 
-    return [
-        CountryData(
+    return {
+        c[0].identifier: CountryData(
             c[0].country_region,
             max(c, key=lambda d: d.last_update).last_update,
             [
@@ -60,7 +60,7 @@ def group_country_region(data: CountryDayDataList) -> CountryDataList:
             ],
         )
         for c in (list(c) for _, c in groupby(data, key=lambda c: c.identifier))
-    ]
+    }
 
     # output_list = []
     # current_list = [data[0]]
