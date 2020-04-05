@@ -155,7 +155,6 @@ def country_to_identifier(search: str):
 def filter_countries(data: CountryDataList, country_names: typing.Sequence[str]):
     def find_one(cn: str):
         identifier = country_to_identifier(cn)
-        print(identifier, identifier in data)
         if identifier in data:
             return data[identifier]
         raise LookupError(f"'{cn}' is not found")
