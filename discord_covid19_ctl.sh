@@ -59,7 +59,7 @@ if $PULL; then
 fi
 
 if $BUILD; then
-    docker build -t $IMAGE_NAME server
+    docker build -t $IMAGE_NAME .
 
     if [ $? -ne 0 ]; then
         echo "Docker build failed. Exiting."
