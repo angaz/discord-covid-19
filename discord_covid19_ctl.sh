@@ -12,8 +12,8 @@ function print_help {
     exit 1
 }
 
-CONTAINER_NAME="covid19"
-IMAGE_NAME="angusd/covid19"
+CONTAINER_NAME="discord_covid19"
+IMAGE_NAME="angusd/discord_covid19"
 
 PULL=false
 BUILD=false
