@@ -1,23 +1,13 @@
 import asyncio
-from matplotlib import pyplot as plt
-from graphs import graph, graph_since_nth_case
-from sys import argv
 from pathlib import Path
-import pycountry
-import typing
+from sys import argv
 
 from aiohttp import ClientSession
+from matplotlib import pyplot as plt
+
+from country_day_data import filter_countries
+from graphs import graph, graph_since_nth_case
 from scraper import initialize_data
-from country_day_data import CountryDataList
-
-
-def country_to_identifier(search: str):
-    pyc = pycountry.countries.search_fuzzy(search)
-    return pyc[0].alpha_2.upper() if pyc else search.replace(" ", "_").upper()
-
-
-def filter_countries(data: CountryDataList, country_names: typing.Sequence[str]):
-    return [data[country_to_identifier(cn)] for cn in country_names]
 
 
 async def _main():

@@ -1,12 +1,14 @@
+import asyncio
+from io import BytesIO
+
 import matplotlib.dates as mdates
 from matplotlib import pyplot as plt
-from io import BytesIO
 from PIL import Image
 
 from country_day_data import CountryDataList
 
 
-def graph(countries: CountryDataList) -> Image:
+def _graph(countries: CountryDataList) -> BytesIO:
     countries = [(c, *c.axes_confirmed()) for c in countries]
 
     fig, ax = plt.subplots()
@@ -28,6 +30,8 @@ def graph(countries: CountryDataList) -> Image:
     buf = BytesIO()
     fig.savefig(buf, format="png")
     buf.seek(0)
-    img = Image.open(buf)
-    # buf.close()
-    return img
+    return buf
+
+
+async def graph(countries: CountryDataList) -> Image:
+    return await asyncio.get_event_loop().run_in_executor(None, _graph, countries)

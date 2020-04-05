@@ -1,19 +1,15 @@
-# Current Data
-# https://raw.githubusercontent.com/CSSEGISandData/COVID-19/web-data/data/cases_country.csv
-# Historical Data
-# https://raw.githubusercontent.com/CSSEGISandData/COVID-19/web-data/data/cases_time.csv
-
 import typing
-from datetime import datetime, date
 from csv import DictReader
-from aiohttp import ClientSession
+from datetime import date, datetime
 from itertools import groupby
 
+from aiohttp import ClientSession
+
 from country_day_data import (
-    CountryDataList,
-    CountryDayDataList,
-    CountryDayData,
     CountryData,
+    CountryDataList,
+    CountryDayData,
+    CountryDayDataList,
     DayData,
 )
 
@@ -45,7 +41,7 @@ def group_country_region(data: CountryDayDataList) -> CountryDataList:
     data.sort(key=lambda d: d.day)
     data.sort(key=lambda d: d.identifier)
 
-    return {
+    out_data = {
         c[0].identifier: CountryData(
             c[0].country_region,
             max(c, key=lambda d: d.last_update).last_update,
@@ -62,27 +58,22 @@ def group_country_region(data: CountryDayDataList) -> CountryDataList:
         for c in (list(c) for _, c in groupby(data, key=lambda c: c.identifier))
     }
 
-    # output_list = []
-    # current_list = [data[0]]
-    # for current in data[1:]:
-    #     if current.identifier == current_list[0].identifier:
-    #         current_list.append(current)
-    #     else:
-    #         days = [
-    #             DayData(day.day, day.confirmed, day.deaths, day.recovered)
-    #             for day in current_list
-    #         ]
+    data.sort(key=lambda d: d.day)
+    out_data["GLOBAL"] = CountryData(
+        "Global",
+        max(data, key=lambda d: d.last_update).last_update,
+        [
+            DayData(
+                days[0].day,
+                sum(d.confirmed for d in days),
+                sum(d.deaths for d in days),
+                sum(d.recovered for d in days),
+            )
+            for days in (list(d) for _, d in groupby(data, key=lambda d: d.day))
+        ],
+    )
 
-    #         output_list.append(
-    #             CountryData(
-    #                 current_list[0].country_region,
-    #                 max(current_list, key=lambda a: a.last_update).last_update,
-    #                 days,
-    #             )
-    #         )
-    #         current_list = [current]
-
-    # return output_list
+    return out_data
 
 
 async def initialize_data(session: ClientSession) -> CountryDataList:

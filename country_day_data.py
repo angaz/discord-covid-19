@@ -1,6 +1,7 @@
-from dataclasses import dataclass
 import typing
-from datetime import datetime, date, timezone
+from dataclasses import dataclass
+from datetime import date, datetime, timezone
+
 import pycountry
 
 FOUND_COUNTRIES = {}
@@ -23,10 +24,13 @@ def find_country(country_region: str) -> pycountry.ExistingCountries:
         "Burma": pycountry.countries.get(alpha_2="MM"),
         "Congo (Brazzaville)": pycountry.countries.get(alpha_2="CG"),
         "Congo (Kinshasa)": pycountry.countries.get(alpha_2="CG"),
-        "Diamond Princess": None,
+        "Diamond Princess": pycountry.db.Data(
+            name="Diamond Princess", alpha_2="DIAMOND_PRINCESS"
+        ),
+        "Global": pycountry.db.Data(name="Global", alpha_2="GLOBAL"),
         "Korea, South": pycountry.countries.get(alpha_2="KR"),
         "Laos": pycountry.countries.get(alpha_2="LA"),
-        "MS Zaandam": None,
+        "MS Zaandam": pycountry.db.Data(name="MS Zaandam", alpha_2="MS_ZAANDAM"),
         "Taiwan*": pycountry.countries.get(alpha_2="TW"),
         "West Bank and Gaza": pycountry.countries.get(alpha_2="PL"),
     }
@@ -52,8 +56,7 @@ class CountryDayData:
 
     @property
     def identifier(self):
-        country = find_country(self.country_region)
-        return country.alpha_2.upper() if country else self.country_region.upper()
+        return find_country(self.country_region).alpha_2.upper()
 
     @classmethod
     def init_csv_row(cls, data: dict, day: typing.Optional[date] = None):
@@ -109,11 +112,7 @@ class CountryData:
         self.country = find_country(country_region)
         self.last_update = last_update
         self.days = days
-        self.identifier = (
-            self.country.alpha_2.upper()
-            if self.country
-            else self.country_region.replace(" ", "_").upper()
-        )
+        self.identifier = self.country.alpha_2.upper()
 
     def to_dict(self) -> dict:
         return {
@@ -143,3 +142,22 @@ class CountryData:
 
 CountryDayDataList = typing.List[CountryDayData]
 CountryDataList = typing.List[CountryData]
+
+
+def country_to_identifier(search: str):
+    try:
+        pyc = pycountry.countries.search_fuzzy(search)
+        return pyc[0].alpha_2.upper()
+    except LookupError:
+        return search.replace(" ", "_").upper()
+
+
+def filter_countries(data: CountryDataList, country_names: typing.Sequence[str]):
+    def find_one(cn: str):
+        identifier = country_to_identifier(cn)
+        print(identifier, identifier in data)
+        if identifier in data:
+            return data[identifier]
+        raise LookupError(f"'{cn}' is not found")
+
+    return [find_one(cn) for cn in country_names]
