@@ -14,7 +14,6 @@ aiohttp = {extras = ["speedups"],version = "*"}
 discord-py = "*"
 pycountry = "*"
 matplotlib = "*"
-pillow = "*"
 
 [requires]
 python_version = "3.8"
