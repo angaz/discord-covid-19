@@ -30,7 +30,7 @@ async def graph_endpoint(request: web.Request) -> web.Response:
         body=image_bytes,
         headers={
             "Content-Disposition": f'filename="{filename}.png"',
-            "Content-Length": len(image_bytes),
+            "Content-Length": str(len(image_bytes)),
             "Content-Type": "image/png",
         },
     )

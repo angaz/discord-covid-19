@@ -31,7 +31,7 @@ async def graph_since_nth_case_endpoint(request: web.Request) -> web.Response:
         body=image_bytes,
         headers={
             "Content-Disposition": f'filename="{filename}_since_{since_case}.png"',
-            "Content-Length": len(image_bytes),
+            "Content-Length": str(len(image_bytes)),
             "Content-Type": "image/png",
         },
     )
