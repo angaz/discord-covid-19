@@ -3,7 +3,6 @@ from io import BytesIO
 
 import matplotlib.dates as mdates
 from matplotlib import pyplot as plt
-from PIL import Image
 
 from country_day_data import CountryDataList
 
@@ -33,5 +32,5 @@ def _graph(countries: CountryDataList) -> BytesIO:
     return buf
 
 
-async def graph(countries: CountryDataList) -> Image:
+async def graph(countries: CountryDataList) -> BytesIO:
     return await asyncio.get_event_loop().run_in_executor(None, _graph, countries)

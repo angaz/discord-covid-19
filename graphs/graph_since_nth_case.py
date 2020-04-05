@@ -2,7 +2,6 @@ import asyncio
 from io import BytesIO
 
 from matplotlib import pyplot as plt
-from PIL import Image
 
 from country_day_data import CountryData, CountryDataList
 
@@ -13,7 +12,7 @@ def axes_confirmed_since_nth_case(country: CountryData, since_nth_case: int):
     return offset, x, y
 
 
-def _graph_since_nth_case(countries: CountryDataList, since_nth_case: int,) -> Image:
+def _graph_since_nth_case(countries: CountryDataList, since_nth_case: int,) -> BytesIO:
     countries = [
         (c, *axes_confirmed_since_nth_case(c, since_nth_case)) for c in countries
     ]
@@ -55,7 +54,7 @@ def _graph_since_nth_case(countries: CountryDataList, since_nth_case: int,) -> I
 
 async def graph_since_nth_case(
     countries: CountryDataList, since_nth_case: int
-) -> Image:
+) -> BytesIO:
     return await asyncio.get_event_loop().run_in_executor(
         None, _graph_since_nth_case, countries, since_nth_case
     )
