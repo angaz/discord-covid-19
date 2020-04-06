@@ -22,13 +22,16 @@ async def _main():
     us_za_countries = filter_countries(data, ["US", "ZA"])
     since_0_countries = filter_countries(data, ["ZA", "Italy", "KR", "CZ", "US"])
 
-    cz_za_graph = graph(cz_za_countries)
-    us_za_graph = graph(us_za_countries)
-    since_0_graph = graph_since_nth_case(since_0_countries, 0)
+    cz_za_graph = await graph(cz_za_countries)
+    us_za_graph = await graph(us_za_countries)
+    since_0_graph = await graph_since_nth_case(since_0_countries, 0)
 
-    cz_za_graph.convert("RGB").save(outdir / "graph_cz_za.png")
-    us_za_graph.convert("RGB").save(outdir / "graph_us_za.png")
-    since_0_graph.convert("RGB").save(outdir / "graph_since_0.png")
+    with (outdir / "graph_cz_za.png").open("wb") as f:
+        f.write(cz_za_graph.getvalue())
+    with (outdir / "graph_us_za.png").open("wb") as f:
+        f.write(us_za_graph.getvalue())
+    with (outdir / "graph_since_0.png").open("wb") as f:
+        f.write(since_0_graph.getvalue())
 
 
 if __name__ == "__main__":

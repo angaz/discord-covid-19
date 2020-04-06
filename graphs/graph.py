@@ -7,22 +7,27 @@ from matplotlib import pyplot as plt
 from country_day_data import CountryDataList
 
 
-def _graph(countries: CountryDataList) -> BytesIO:
-    countries = [(c, *c.axes_confirmed()) for c in countries]
-
+def _graph(countries: CountryDataList, title: str) -> BytesIO:
     fig, ax = plt.subplots()
 
-    for country, x, y in countries:
-        ax.plot(x, y, marker="o", label=country.country.name)
+    for country, label, (x, y) in countries:
+        ax.plot(x, y, marker="o", label=label)
+        ax.annotate(
+            y[-1],
+            xy=(1, y[-1]),
+            xytext=(5, -5),
+            xycoords=("axes fraction", "data"),
+            textcoords="offset pixels",
+        )
 
     locator = mdates.AutoDateLocator(minticks=3, maxticks=9)
     formatter = mdates.ConciseDateFormatter(locator, show_offset=False)
     ax.xaxis.set_major_locator(locator)
     ax.xaxis.set_major_formatter(formatter)
 
-    ax.set_title("Confirmed Cases vs Time")
+    ax.set_title(f"{title} vs Time")
     ax.set_xlabel("Date")
-    ax.set_ylabel("Number of Confirmed Cases")
+    ax.set_ylabel(f"Number of {title}")
     ax.legend()
     fig.tight_layout()
 
@@ -32,5 +37,7 @@ def _graph(countries: CountryDataList) -> BytesIO:
     return buf
 
 
-async def graph(countries: CountryDataList) -> BytesIO:
-    return await asyncio.get_event_loop().run_in_executor(None, _graph, countries)
+async def graph(countries: CountryDataList, title: str) -> BytesIO:
+    return await asyncio.get_event_loop().run_in_executor(
+        None, _graph, countries, title
+    )

@@ -6,22 +6,33 @@ from matplotlib import pyplot as plt
 from country_day_data import CountryData, CountryDataList
 
 
-def axes_confirmed_since_nth_case(country: CountryData, since_nth_case: int):
-    x, y = country.axes_confirmed()
-    offset = [i >= since_nth_case for i in y].index(True)
-    return offset, x, y
+def offset_since_confirmed(country: CountryData, since_nth_case: int) -> int:
+    x, y = country.confirmed_axes()
+    return [i >= since_nth_case for i in y].index(True)
 
 
-def _graph_since_nth_case(countries: CountryDataList, since_nth_case: int,) -> BytesIO:
+def st_nd_th(since_nth_case: int) -> str:
+    rem = since_nth_case % 10
+    if since_nth_case != 11 and rem == 1:
+        return f"{since_nth_case}st"
+    if since_nth_case != 12 and rem == 2:
+        return f"{since_nth_case}nd"
+    return f"{since_nth_case}th"
+
+
+def _graph_since_nth_case(
+    countries: CountryDataList, title: str, since_nth_case: int,
+) -> BytesIO:
     countries = [
-        (c, *axes_confirmed_since_nth_case(c, since_nth_case)) for c in countries
+        (c, l, offset_since_confirmed(c, since_nth_case), (x, y))
+        for c, l, (x, y) in countries
     ]
     first_country = countries[0]
-    length = len(first_country[3]) - first_country[1]
+    length = len(first_country[3][1]) - first_country[2]
 
     fig, ax = plt.subplots()
 
-    for country, offset, x, y in countries:
+    for country, label, offset, (x, y) in countries:
         if offset == -1:
             continue
 
@@ -31,18 +42,22 @@ def _graph_since_nth_case(countries: CountryDataList, since_nth_case: int,) -> B
             range(len(y_plot)),
             y_plot,
             marker="o",
-            label=(
-                f"{country.country.name} ({offset} days offset)"
-                if since_nth_case
-                else country.country.name
-            ),
+            label=(f"{label} ({offset} days offset)" if since_nth_case else label),
+        )
+        ax.annotate(
+            y_plot[-1],
+            xy=(1, y_plot[-1]),
+            xytext=(5, -5),
+            xycoords=("axes fraction", "data"),
+            textcoords="offset pixels",
         )
 
-    ax.set_title(f"Confirmed Cases vs Time since {since_nth_case}th case")
+    ax.set_title(f"{title} vs Days since {st_nd_th(since_nth_case)} case")
     ax.set_xlabel(
-        f"Days since {since_nth_case}th case ({length} days for {first_country[0].country.name})"
+        f"Days since {st_nd_th(since_nth_case)} Confirmed Case "
+        f"({length} days for {first_country[0].country.name})"
     )
-    ax.set_ylabel("Number of cases")
+    ax.set_ylabel(f"Number of {title}")
     ax.legend()
     fig.tight_layout()
 
@@ -53,8 +68,8 @@ def _graph_since_nth_case(countries: CountryDataList, since_nth_case: int,) -> B
 
 
 async def graph_since_nth_case(
-    countries: CountryDataList, since_nth_case: int
+    countries: CountryDataList, title: str, since_nth_case: int
 ) -> BytesIO:
     return await asyncio.get_event_loop().run_in_executor(
-        None, _graph_since_nth_case, countries, since_nth_case
+        None, _graph_since_nth_case, countries, title, since_nth_case
     )

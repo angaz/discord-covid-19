@@ -130,14 +130,23 @@ class CountryData:
             [DayData.from_dict(day) for day in data["days"]],
         )
 
-    def x_axis(self) -> typing.List[str]:
+    def confirmed_days(self) -> typing.List[date]:
         return [d.day for d in self.days if d.confirmed > 0]
 
-    def y_axis(self) -> typing.List[int]:
+    def confirmed_cases(self) -> typing.List[int]:
         return [d.confirmed for d in self.days if d.confirmed > 0]
 
-    def axes_confirmed(self) -> typing.Tuple[typing.List[str], typing.List[int]]:
-        return self.x_axis(), self.y_axis()
+    def deaths_days(self) -> typing.List[date]:
+        return [d.day for d in self.days if d.deaths > 0]
+
+    def deaths_cases(self) -> typing.List[str]:
+        return [d.deaths for d in self.days if d.deaths > 0]
+
+    def confirmed_axes(self) -> typing.Tuple[str, typing.List[date], typing.List[int]]:
+        return self.confirmed_days(), self.confirmed_cases()
+
+    def deaths_axes(self) -> typing.Tuple[str, typing.List[date], typing.List[int]]:
+        return self.deaths_days(), self.deaths_cases()
 
 
 CountryDayDataList = typing.List[CountryDayData]
