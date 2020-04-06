@@ -30,7 +30,7 @@ async def graph_endpoint(request: web.Request) -> web.Response:
     series = request.query.get("series", "confirmed").split(",")
     since_case = request.query.get("since_case")
 
-    if since_case is not None and since_case.isnumeric():
+    if since_case is not None and not since_case.isnumeric():
         raise web.HTTPBadRequest(text=f"Since Case value is not numeric.")
 
     try:
