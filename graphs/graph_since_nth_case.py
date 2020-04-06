@@ -42,7 +42,7 @@ def _graph_since_nth_case(
             range(len(y_plot)),
             y_plot,
             marker="o",
-            label=(f"{label} ({offset} days offset)" if since_nth_case else label),
+            label=(f"{label} ({offset:+} Days)" if since_nth_case else label),
         )
         ax.annotate(
             y_plot[-1],
@@ -52,10 +52,10 @@ def _graph_since_nth_case(
             textcoords="offset pixels",
         )
 
-    ax.set_title(f"{title} vs Days since {st_nd_th(since_nth_case)} case")
+    ax.set_title(f"{title} vs Days Since {st_nd_th(since_nth_case)} Confirmed Case")
     ax.set_xlabel(
-        f"Days since {st_nd_th(since_nth_case)} Confirmed Case "
-        f"({length} days for {first_country[0].country.name})"
+        f"Days Since {st_nd_th(since_nth_case)} Confirmed Case "
+        f"({length} Days for {first_country[0].country.name})"
     )
     ax.set_ylabel(f"Number of {title}")
     ax.legend()
