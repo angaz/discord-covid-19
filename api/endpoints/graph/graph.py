@@ -17,7 +17,7 @@ def graph_title(series: typing.Sequence[str]) -> str:
     except KeyError as e:
         raise web.HTTPBadRequest(
             text=(
-                f"{str(e)} is not a valid series.\n"
+                f"{str(e)} is not a valid series.\n\n"
                 "Valid series are none, one or both: 'confirmed' or 'deaths'.\n"
                 "If left empty, 'confirmed' will be used."
             )
@@ -38,10 +38,12 @@ async def graph_endpoint(request: web.Request) -> web.Response:
     except LookupError as e:
         raise web.HTTPBadRequest(
             text=(
-                f"{str(e)} is not a valid country name or code.\n"
+                f"{str(e)}.\n\n"
                 "You can use none, one or many country codes or names.\n"
+                "If left empty, 'global' will be used.\n"
                 "Both Alpha-2 and Alpha-3 country codes will work.\n"
-                "Prefer country codes to names."
+                "Prefer country codes to names.\n\n"
+                "Special names: 'global', 'diamond_princess', and 'ms_zaandam'"
             )
         )
 
