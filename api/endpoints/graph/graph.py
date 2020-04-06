@@ -12,7 +12,16 @@ from .routes import routes
 
 def graph_title(series: typing.Sequence[str]) -> str:
     out = {"deaths": "Deaths", "confirmed": "Confirmed Cases"}
-    return ", ".join([out[s] for s in series])
+    try:
+        return ", ".join([out[s] for s in series])
+    except KeyError as e:
+        raise web.HTTPBadRequest(
+            text=(
+                f"{str(e)} is not a valid series.\n"
+                "Valid series are none, one or both: 'confirmed' or 'deaths'.\n"
+                "If left empty, 'confirmed' will be used."
+            )
+        )
 
 
 @routes.get("/graph")
@@ -21,10 +30,20 @@ async def graph_endpoint(request: web.Request) -> web.Response:
     series = request.query.get("series", "confirmed").split(",")
     since_case = request.query.get("since_case")
 
+    if since_case is not None and since_case.isnumeric():
+        raise web.HTTPBadRequest(text=f"Since Case value is not numeric.")
+
     try:
         countries = filter_countries(request.app["data"], country_names)
     except LookupError as e:
-        raise web.HTTPBadRequest(text=str(e))
+        raise web.HTTPBadRequest(
+            text=(
+                f"{str(e)} is not a valid country name or code.\n"
+                "You can use none, one or many country codes or names.\n"
+                "Both Alpha-2 and Alpha-3 country codes will work.\n"
+                "Prefer country codes to names."
+            )
+        )
 
     image = (
         await graph(axes_data(countries, series), graph_title(series))
