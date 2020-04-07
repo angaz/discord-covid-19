@@ -5,7 +5,9 @@ function print_help {
     echo "Usage: $0 [pull|build|re[create]|run|log[s]]..."
     echo
     echo "    pull            Does a git pull"
-    echo "    build           Same as 'build-server' and 'build-client' flags"
+    echo "    docker-pull     Does a docker pull"
+    echo "    build           Does a docker build"
+    echo "    push            Does a docker push"
     echo "    re[create]      Removes the current running docker and runs a new docker"
     echo "    run             Runs a new docker"
     echo "    log[s]          Follows the server logs"
@@ -16,7 +18,9 @@ CONTAINER_NAME="discord_covid19"
 IMAGE_NAME="angusd/discord_covid19"
 
 PULL=false
+DOCKER_PULL=false
 BUILD=false
+PUSH=false
 RECREATE=false
 RUN=false
 LOGS=false
@@ -30,8 +34,14 @@ for flag in $@; do
         pull)
             PULL=true
             ;;
+        docker-pull)
+            DOCKER_PULL=true
+            ;;
         build)
             BUILD=true
+            ;;
+        push)
+            PUSH=true
             ;;
         re|recreate)
             RECREATE=true
@@ -58,11 +68,29 @@ if $PULL; then
     fi
 fi
 
+if $DOCKER_PULL; then
+    docker pull $IMAGE_NAME
+
+    if [ $? -ne 0 ]; then
+        echo "Docker pull failed. Exiting."
+        exit 1
+    fi
+fi
+
 if $BUILD; then
     docker build -t $IMAGE_NAME .
 
     if [ $? -ne 0 ]; then
         echo "Docker build failed. Exiting."
+        exit 1
+    fi
+fi
+
+if $PUSH; then
+    docker push $IMAGE_NAME
+
+    if [ $? -ne 0 ]; then
+        echo "Docker push failed. Exiting."
         exit 1
     fi
 fi
