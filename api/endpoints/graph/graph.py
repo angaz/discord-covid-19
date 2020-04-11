@@ -31,11 +31,12 @@ async def graph_endpoint(request: web.Request) -> web.Response:
     since_case = request.query.get("since_case")
 
     for key in request.query.keys():
-        if key not in ("countries", "series", "since_case"):
+        if key not in ("countries", "series", "since_case", "nonce"):
             raise web.HTTPBadRequest(
                 text=(
                     f"'{key}' is not a valid parameter.\n"
-                    "Valid parameters are none, one or many: 'countries', 'series', and 'since_case'."
+                    "Valid parameters are none, one or many: 'countries', 'series', and 'since_case'.\n"
+                    "You can add an optional 'nonce' as a cache invalidation method."
                 )
             )
 
