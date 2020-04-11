@@ -78,7 +78,7 @@ if $DOCKER_PULL; then
 fi
 
 if $BUILD; then
-    docker build -t $IMAGE_NAME .
+    docker build -f api.Dockerfile -t $IMAGE_NAME .
 
     if [ $? -ne 0 ]; then
         echo "Docker build failed. Exiting."
