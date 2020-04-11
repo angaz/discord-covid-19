@@ -1,7 +1,7 @@
 #!/bin/bash
 
 function print_help {
-    echo "Invalid argument $1"
+    echo "Invalid argument"
     echo "Usage: $0 [pull|build|re[create]|run|log[s]]..."
     echo
     echo "    pull            Does a git pull"
@@ -14,8 +14,8 @@ function print_help {
     exit 1
 }
 
-CONTAINER_NAME="discord_covid19"
-IMAGE_NAME="angusd/discord_covid19"
+CONTAINER_NAME="api_covid19"
+IMAGE_NAME="angusd/api_covid19"
 
 PULL=false
 DOCKER_PULL=false
