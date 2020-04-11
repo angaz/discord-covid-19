@@ -105,7 +105,11 @@ if $RECREATE; then
 fi
 
 if $RECREATE || $RUN; then
-    docker run -d --name $CONTAINER_NAME -p 8080:8080 $IMAGE_NAME
+    docker run                  \
+        --detach                \
+        --name $CONTAINER_NAME  \
+        --publish 8080:8080     \
+        $IMAGE_NAME
 
     if [ $? -ne 0 ]; then
         echo "docker run failed. Exiting"
