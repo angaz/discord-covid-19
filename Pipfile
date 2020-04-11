@@ -11,9 +11,9 @@ mypy = "*"
 
 [packages]
 aiohttp = {extras = ["speedups"],version = "*"}
-discord-py = "*"
 pycountry = "*"
 matplotlib = "*"
+discord-py = "*"
 
 [requires]
 python_version = "3.8"
