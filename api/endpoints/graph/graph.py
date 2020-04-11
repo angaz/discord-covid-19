@@ -28,14 +28,14 @@ def graph_title(series: typing.Sequence[str]) -> str:
 async def graph_endpoint(request: web.Request) -> web.Response:
     country_names = request.query.get("countries", "global").split(",")
     series = request.query.get("series", "confirmed").split(",")
-    since_case = request.query.get("since_case")
+    since_case = request.query.get("since")
 
     for key in request.query.keys():
-        if key not in ("countries", "series", "since_case", "nonce"):
+        if key not in ("countries", "series", "since", "nonce"):
             raise web.HTTPBadRequest(
                 text=(
                     f"'{key}' is not a valid parameter.\n"
-                    "Valid parameters are none, one or many: 'countries', 'series', and 'since_case'.\n"
+                    "Valid parameters are none, one or many: 'countries', 'series', and 'since'.\n"
                     "You can add an optional 'nonce' as a cache invalidation method."
                 )
             )
