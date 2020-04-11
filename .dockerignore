@@ -1,4 +1,5 @@
+__pycache__
 .git
 .venv
 .vscode
-__pycache__
+discord.token

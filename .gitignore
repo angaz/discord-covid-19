@@ -1,5 +1,6 @@
+__pycache__
 .venv
 .vscode
 *.png
 database.json
-__pycache__
+discord.token
