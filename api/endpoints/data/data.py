@@ -7,8 +7,8 @@ from utils import axes_data
 from .routes import routes
 
 
-@routes.get("/graph")
-async def graph_endpoint(request: web.Request) -> web.Response:
+@routes.get("/data")
+async def data_endpoint(request: web.Request) -> web.Response:
     country_names = request.query.get("countries", "global").split(",")
     series = request.query.get("series", "confirmed").split(",")
     since_case = request.query.get("since")
