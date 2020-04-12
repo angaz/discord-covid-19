@@ -4,6 +4,8 @@ from datetime import date, datetime, timezone
 
 import pycountry
 
+from aiohttp import web
+
 FOUND_COUNTRIES = {}
 
 
@@ -114,6 +116,13 @@ class CountryData:
         self.days = days
         self.identifier = self.country.alpha_2.upper()
 
+    def to_dict_without_days(self) -> dict:
+        return {
+            "country_region": self.country_region,
+            "identifier": self.identifier,
+            "last_update": self.last_update.isoformat(),
+        }
+
     def to_dict(self) -> dict:
         return {
             "country_region": self.country_region,
@@ -166,6 +175,15 @@ def filter_countries(data: CountryDataList, country_names: typing.Sequence[str])
         identifier = country_to_identifier(cn)
         if identifier in data:
             return data[identifier]
-        raise LookupError(f"'{cn}' is not found")
+        raise web.HTTPBadRequest(
+            text=(
+                f"{cn} is not a valid country.\n\n"
+                "You can use none, one or many country codes or names.\n"
+                "If left empty, 'global' will be used.\n"
+                "Both Alpha-2 and Alpha-3 country codes will work.\n"
+                "Prefer country codes to names.\n\n"
+                "Special names: 'Global', 'Diamond Princess', and 'MS Zaandam'"
+            )
+        )
 
     return [find_one(cn) for cn in country_names]
