@@ -27,6 +27,7 @@ async def graph_endpoint(request: web.Request) -> web.Response:
             axes_data(countries, series), graph_title(series), int(since_case)
         )
     )
+
     filename = "_".join(
         [
             datetime.utcnow().strftime("%Y%m%dT%H%M%S"),

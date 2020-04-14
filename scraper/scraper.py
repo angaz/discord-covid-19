@@ -3,6 +3,7 @@ from csv import DictReader
 from datetime import date, datetime
 from itertools import groupby
 
+import pycountry
 from aiohttp import ClientSession
 
 from country_day_data import (
@@ -19,7 +20,9 @@ async def download_csv_file(
 ) -> CountryDayDataList:
     async with session.get(url) as resp:
         rows = DictReader((await resp.text()).splitlines())
-        return [CountryDayData.init_csv_row(row, day) for row in rows]
+        return [
+            CountryDayData.init_csv_row(row, day) for row in rows if not row.get("FIPS")
+        ]
 
 
 async def download_current_data(session: ClientSession) -> CountryDayDataList:
@@ -37,13 +40,13 @@ async def download_historical_data(session: ClientSession) -> CountryDayDataList
     )
 
 
-def group_country_region(data: CountryDayDataList) -> CountryDataList:
+def group_country(data: CountryDayDataList) -> CountryDataList:
     data.sort(key=lambda d: d.day)
-    data.sort(key=lambda d: d.identifier)
+    data.sort(key=lambda d: d.country.alpha_3)
 
     out_data = {
-        c[0].identifier: CountryData(
-            c[0].country_region,
+        c[0].country.alpha_3: CountryData(
+            c[0].country,
             max(c, key=lambda d: d.last_update).last_update,
             [
                 DayData(
@@ -55,12 +58,12 @@ def group_country_region(data: CountryDayDataList) -> CountryDataList:
                 for days in (list(d) for _, d in groupby(c, key=lambda d: d.day))
             ],
         )
-        for c in (list(c) for _, c in groupby(data, key=lambda c: c.identifier))
+        for c in (list(c) for _, c in groupby(data, key=lambda c: c.country.alpha_3))
     }
 
     data.sort(key=lambda d: d.day)
     out_data["GLOBAL"] = CountryData(
-        "Global",
+        pycountry.db.Data(name="Global", alpha_3="GLOBAL", alpha_2="GLOBAL"),
         max(data, key=lambda d: d.last_update).last_update,
         [
             DayData(
@@ -86,4 +89,4 @@ async def initialize_data(session: ClientSession) -> CountryDataList:
         for row in csv_file
     ]
 
-    return group_country_region(data)
+    return group_country(data)

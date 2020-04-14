@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from datetime import date, datetime, timezone
 
 import pycountry
-
 from aiohttp import web
 
 FOUND_COUNTRIES = {}
@@ -18,47 +17,37 @@ def parse_last_update(last_update: str) -> datetime:
     return out.replace(tzinfo=timezone.utc)
 
 
-def find_country(country_region: str) -> pycountry.ExistingCountries:
-    if country_region in FOUND_COUNTRIES:
-        return FOUND_COUNTRIES[country_region]
+def find_country(iso3: str, country_region: str) -> pycountry.ExistingCountries:
+    iso3_or_country = iso3 or country_region
 
-    known = {
-        "Burma": pycountry.countries.get(alpha_2="MM"),
-        "Congo (Brazzaville)": pycountry.countries.get(alpha_2="CG"),
-        "Congo (Kinshasa)": pycountry.countries.get(alpha_2="CG"),
-        "Diamond Princess": pycountry.db.Data(
-            name="Diamond Princess", alpha_2="DIAMOND_PRINCESS"
-        ),
-        "Global": pycountry.db.Data(name="Global", alpha_2="GLOBAL"),
-        "Korea, South": pycountry.countries.get(alpha_2="KR"),
-        "Laos": pycountry.countries.get(alpha_2="LA"),
-        "MS Zaandam": pycountry.db.Data(name="MS Zaandam", alpha_2="MS_ZAANDAM"),
-        "Taiwan*": pycountry.countries.get(alpha_2="TW"),
-        "West Bank and Gaza": pycountry.countries.get(alpha_2="PL"),
-    }
-
-    out = (
-        known[country_region]
-        if country_region in known
-        else pycountry.countries.search_fuzzy(country_region)[0]
-    )
-
-    FOUND_COUNTRIES[country_region] = out
-    return out
+    if iso3_or_country == "XKS":
+        return pycountry.db.Data(name="Kosovo", alpha_2="XK", alpha_3="XKS")
+    if iso3_or_country == "Diamond Princess":
+        return pycountry.db.Data(
+            name="Diamond Princess",
+            alpha_2="DIAMOND_PRINCESS",
+            alpha_3="DIAMOND_PRINCESS",
+        )
+    if iso3_or_country == "MS Zaandam":
+        return pycountry.db.Data(
+            name="MS Zaandam", alpha_2="MS_ZAANDAM", alpha_3="MS_ZAANDAM"
+        )
+    if iso3:
+        country = pycountry.countries.get(alpha_3=iso3)
+        if country:
+            return country
+    print(iso3, country_region)
+    raise KeyError()
 
 
 @dataclass(frozen=True)
 class CountryDayData:
     day: date
-    country_region: str
+    country: pycountry.ExistingCountries
     last_update: datetime
     confirmed: int
     deaths: int
     recovered: int
-
-    @property
-    def identifier(self):
-        return find_country(self.country_region).alpha_2.upper()
 
     @classmethod
     def init_csv_row(cls, data: dict, day: typing.Optional[date] = None):
@@ -66,7 +55,9 @@ class CountryDayData:
 
         return cls(
             day or last_update.date(),
-            data["Country_Region"],
+            find_country(
+                data.get("iso3", data.get("ISO3")) or None, data["Country_Region"]
+            ),
             last_update,
             int(data["Confirmed"] or 0),
             int(data["Deaths"] or 0),
@@ -101,43 +92,36 @@ class DayData:
 
 @dataclass
 class CountryData:
-    country_region: str
     country: pycountry.ExistingCountries
     identifier: str
     last_update: datetime
     days: typing.List[DayData]
 
     def __init__(
-        self, country_region: str, last_update: datetime, days: typing.List[DayData]
+        self,
+        country: pycountry.ExistingCountries,
+        last_update: datetime,
+        days: typing.List[DayData],
     ):
-        self.country_region = country_region
-        self.country = find_country(country_region)
+        self.country = country
+        self.identifier = self.country.alpha_3
         self.last_update = last_update
         self.days = days
-        self.identifier = self.country.alpha_2.upper()
 
     def to_dict_without_days(self) -> dict:
         return {
-            "country_region": self.country_region,
+            "country_region": self.country.name,
             "identifier": self.identifier,
             "last_update": self.last_update.isoformat(),
         }
 
     def to_dict(self) -> dict:
         return {
-            "country_region": self.country_region,
+            "country_region": self.country.name,
             "identifier": self.identifier,
             "last_update": self.last_update.isoformat(),
             "days": [day.to_dict() for day in self.days],
         }
-
-    @classmethod
-    def from_dict(cls, data: dict):
-        return cls(
-            data["country_region"],
-            data["last_update"],
-            [DayData.from_dict(day) for day in data["days"]],
-        )
 
     def confirmed_days(self) -> typing.List[date]:
         return [d.day for d in self.days if d.confirmed > 0]
@@ -165,7 +149,7 @@ CountryDataList = typing.List[CountryData]
 def country_to_identifier(search: str):
     try:
         pyc = pycountry.countries.search_fuzzy(search)
-        return pyc[0].alpha_2.upper()
+        return pyc[0].alpha_3
     except LookupError:
         return search.replace(" ", "_").upper()
 
