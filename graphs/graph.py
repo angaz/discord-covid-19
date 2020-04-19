@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 from country_day_data import CountryDataList
 
 
-def _graph(countries: CountryDataList, title: str) -> BytesIO:
+def _graph(countries: CountryDataList, title: str, scale: str) -> BytesIO:
     fig, ax = plt.subplots()
 
     for country, label, (x, y) in countries:
@@ -25,6 +25,7 @@ def _graph(countries: CountryDataList, title: str) -> BytesIO:
     ax.xaxis.set_major_locator(locator)
     ax.xaxis.set_major_formatter(formatter)
 
+    ax.set_yscale(scale)
     ax.set_title(f"{title} vs Time")
     ax.set_xlabel("Date")
     ax.set_ylabel(f"Number of {title}")
@@ -37,7 +38,7 @@ def _graph(countries: CountryDataList, title: str) -> BytesIO:
     return buf
 
 
-async def graph(countries: CountryDataList, title: str) -> BytesIO:
+async def graph(countries: CountryDataList, title: str, scale: str) -> BytesIO:
     return await asyncio.get_event_loop().run_in_executor(
-        None, _graph, countries, title
+        None, _graph, countries, title, scale,
     )

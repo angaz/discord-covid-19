@@ -21,7 +21,7 @@ def st_nd_th(since_nth_case: int) -> str:
 
 
 def _graph_since_nth_case(
-    countries: CountryDataList, title: str, since_nth_case: int,
+    countries: CountryDataList, title: str, scale: str, since_nth_case: int
 ) -> BytesIO:
     countries = [
         (c, l, offset_since_confirmed(c, since_nth_case), (x, y))
@@ -56,6 +56,7 @@ def _graph_since_nth_case(
             textcoords="offset pixels",
         )
 
+    ax.set_yscale(scale)
     ax.set_title(f"{title} vs Days Since {st_nd_th(since_nth_case)} Confirmed Case")
     ax.set_xlabel(
         f"Days Since {st_nd_th(since_nth_case)} Confirmed Case "
@@ -72,8 +73,8 @@ def _graph_since_nth_case(
 
 
 async def graph_since_nth_case(
-    countries: CountryDataList, title: str, since_nth_case: int
+    countries: CountryDataList, title: str, scale: str, since_nth_case: int,
 ) -> BytesIO:
     return await asyncio.get_event_loop().run_in_executor(
-        None, _graph_since_nth_case, countries, title, since_nth_case
+        None, _graph_since_nth_case, countries, title, scale, since_nth_case
     )
